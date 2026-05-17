@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SR Hub - Steal a Brainrot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+background: #0d0d0d;
+min-height: 100vh;
+font-family: ‘Rajdhani’, sans-serif;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+background-image:
+repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.02) 39px, rgba(255,255,255,0.02) 40px),
+repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.02) 39px, rgba(255,255,255,0.02) 40px);
+}
+
+/* Toggle Button */
+#toggleBtn {
+position: fixed;
+top: 16px;
+left: 50%;
+transform: translateX(-50%);
+background: #1a1a1a;
+border: 1px solid #333;
+color: #aaa;
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 11px;
+padding: 6px 18px;
+cursor: pointer;
+border-radius: 3px;
+letter-spacing: 2px;
+z-index: 9999;
+transition: all 0.2s;
+text-transform: uppercase;
+}
+#toggleBtn:hover { background: #222; border-color: #555; color: #eee; }
+
+/* Main GUI Window */
+#srHub {
+position: fixed;
+top: 60px;
+left: 50%;
+transform: translateX(-50%);
+width: 420px;
+background: #111;
+border: 1px solid #2a2a2a;
+border-radius: 6px;
+box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03) inset;
+z-index: 1000;
+user-select: none;
+transition: opacity 0.2s, transform 0.2s;
+min-width: 280px;
+}
+#srHub.hidden {
+opacity: 0;
+pointer-events: none;
+transform: translateX(-50%) scale(0.95);
+}
+
+/* Title Bar */
+#titleBar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+background: #161616;
+border-bottom: 1px solid #222;
+border-radius: 6px 6px 0 0;
+cursor: grab;
+}
+#titleBar:active { cursor: grabbing; }
+
+.title-left {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.logo-icon {
+width: 18px;
+height: 18px;
+background: linear-gradient(135deg, #555 0%, #333 100%);
+border-radius: 3px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 9px;
+color: #ccc;
+font-family: ‘Share Tech Mono’, monospace;
+font-weight: bold;
+flex-shrink: 0;
+}
+
+.title-text {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 13px;
+color: #ccc;
+letter-spacing: 3px;
+text-transform: uppercase;
+}
+
+.title-sub {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: #444;
+letter-spacing: 2px;
+text-transform: uppercase;
+margin-top: 1px;
+}
+
+.title-controls { display: flex; gap: 6px; align-items: center; }
+
+.ctrl-dot {
+width: 10px; height: 10px;
+border-radius: 50%;
+cursor: pointer;
+transition: opacity 0.15s;
+}
+.ctrl-dot:hover { opacity: 0.7; }
+.dot-close { background: #5a5a5a; }
+.dot-min { background: #444; }
+
+/* Tab Bar */
+#tabBar {
+display: flex;
+background: #111;
+border-bottom: 1px solid #1e1e1e;
+overflow-x: auto;
+scrollbar-width: none;
+}
+#tabBar::-webkit-scrollbar { display: none; }
+
+.tab {
+flex: 1;
+padding: 9px 6px;
+text-align: center;
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: #444;
+cursor: pointer;
+border-bottom: 2px solid transparent;
+transition: all 0.18s;
+white-space: nowrap;
+}
+.tab:hover { color: #777; background: rgba(255,255,255,0.02); }
+.tab.active { color: #bbb; border-bottom-color: #555; background: rgba(255,255,255,0.03); }
+
+/* Tab Content */
+.tab-content { display: none; padding: 14px; }
+.tab-content.active { display: block; }
+
+/* Section */
+.section { margin-bottom: 14px; }
+.section-title {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2.5px;
+text-transform: uppercase;
+color: #3a3a3a;
+margin-bottom: 8px;
+padding-bottom: 4px;
+border-bottom: 1px solid #1a1a1a;
+}
+
+/* Toggle Row */
+.toggle-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 9px 10px;
+background: #161616;
+border-radius: 4px;
+margin-bottom: 4px;
+border: 1px solid #1c1c1c;
+cursor: pointer;
+transition: background 0.15s, border-color 0.15s;
+}
+.toggle-row:hover { background: #1a1a1a; border-color: #252525; }
+.toggle-row.enabled { border-color: #2d2d2d; background: #181818; }
+
+.toggle-label {
+font-size: 13px;
+font-weight: 600;
+color: #777;
+letter-spacing: 0.5px;
+transition: color 0.15s;
+}
+.toggle-row.enabled .toggle-label { color: #bbb; }
+
+.toggle-badge {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 8px;
+letter-spacing: 1px;
+padding: 2px 6px;
+border-radius: 2px;
+background: #1d1d1d;
+color: #3a3a3a;
+margin-left: 6px;
+text-transform: uppercase;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+width: 34px;
+height: 18px;
+background: #1e1e1e;
+border-radius: 9px;
+position: relative;
+transition: background 0.2s;
+border: 1px solid #2a2a2a;
+flex-shrink: 0;
+}
+.toggle-row.enabled .toggle-switch {
+background: #2e2e2e;
+border-color: #404040;
+}
+.toggle-switch::after {
+content: ‘’;
+position: absolute;
+width: 12px;
+height: 12px;
+background: #333;
+border-radius: 50%;
+top: 2px;
+left: 2px;
+transition: transform 0.2s, background 0.2s;
+}
+.toggle-row.enabled .toggle-switch::after {
+transform: translateX(16px);
+background: #888;
+}
+
+/* Settings */
+.setting-row {
+padding: 10px;
+background: #161616;
+border-radius: 4px;
+margin-bottom: 4px;
+border: 1px solid #1c1c1c;
+}
+.setting-label {
+font-size: 11px;
+font-weight: 600;
+color: #555;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+margin-bottom: 10px;
+font-family: ‘Share Tech Mono’, monospace;
+}
+.setting-value {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 10px;
+color: #666;
+float: right;
+}
+
+/* Slider */
+.slider-wrap { position: relative; padding: 4px 0; }
+input[type=range] {
+-webkit-appearance: none;
+width: 100%;
+height: 3px;
+background: #222;
+border-radius: 2px;
+outline: none;
+cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 14px;
+height: 14px;
+background: #555;
+border-radius: 50%;
+cursor: pointer;
+border: 2px solid #333;
+transition: background 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { background: #777; }
+
+/* Keybind Row */
+.keybind-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 9px 10px;
+background: #161616;
+border-radius: 4px;
+margin-bottom: 4px;
+border: 1px solid #1c1c1c;
+}
+.keybind-name {
+font-size: 12px;
+font-weight: 600;
+color: #666;
+letter-spacing: 0.5px;
+}
+.keybind-key {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 10px;
+color: #555;
+background: #1a1a1a;
+border: 1px solid #2a2a2a;
+border-radius: 3px;
+padding: 3px 8px;
+cursor: pointer;
+transition: all 0.15s;
+min-width: 36px;
+text-align: center;
+}
+.keybind-key:hover { border-color: #444; color: #888; }
+.keybind-key.listening {
+border-color: #555;
+color: #aaa;
+animation: pulse 0.8s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* Status bar */
+#statusBar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 7px 14px;
+border-top: 1px solid #1a1a1a;
+background: #0e0e0e;
+border-radius: 0 0 6px 6px;
+}
+.status-dot {
+width: 5px; height: 5px;
+background: #3a3a3a;
+border-radius: 50%;
+display: inline-block;
+margin-right: 6px;
+animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.status-text {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: #333;
+letter-spacing: 1.5px;
+}
+.version-tag {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: #2a2a2a;
+letter-spacing: 1px;
+}
+
+/* Scrollable content */
+.tab-content { max-height: 340px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #222 transparent; }
+.tab-content::-webkit-scrollbar { width: 3px; }
+.tab-content::-webkit-scrollbar-track { background: transparent; }
+.tab-content::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+/* Resize handle */
+#resizeNote {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: #2a2a2a;
+letter-spacing: 1px;
+padding: 4px 14px;
+border-top: 1px solid #181818;
+text-align: center;
+cursor: ew-resize;
+}
+</style>
+
+</head>
+<body>
+
+<button id="toggleBtn">[ SR HUB ]</button>
+
+<div id="srHub">
+  <!-- Title Bar -->
+  <div id="titleBar">
+    <div class="title-left">
+      <div class="logo-icon">SR</div>
+      <div>
+        <div class="title-text">SR Hub</div>
+        <div class="title-sub">Steal a Brainrot</div>
+      </div>
+    </div>
+    <div class="title-controls">
+      <div class="ctrl-dot dot-min" title="Minimize" onclick="document.getElementById('srHub').classList.toggle('hidden')"></div>
+      <div class="ctrl-dot dot-close" title="Close" onclick="document.getElementById('srHub').classList.add('hidden')"></div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+
+  <div id="tabBar">
+    <div class="tab active" data-tab="combat">Combat</div>
+    <div class="tab" data-tab="mechanics">Mechanics</div>
+    <div class="tab" data-tab="movement">Movement</div>
+    <div class="tab" data-tab="settings">Settings</div>
+    <div class="tab" data-tab="keybinds">Keybinds</div>
+  </div>
+
+  <!-- COMBAT TAB -->
+
+  <div class="tab-content active" id="tab-combat">
+    <div class="section">
+      <div class="section-title">Offense</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Auto Attack</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Hit Aura</span><span class="toggle-badge">Range</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Silent Aim</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Kill Aura</span><span class="toggle-badge">AOE</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Defense</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Anti Knockback</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">God Mode</span><span class="toggle-badge">Detection</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Block Bypass</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Assist</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Auto Block</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Reach Extend</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MECHANICS TAB -->
+
+  <div class="tab-content" id="tab-mechanics">
+    <div class="section">
+      <div class="section-title">Brainrot</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Auto Steal</span><span class="toggle-badge">Main</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Steal Radius</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Instant Collect</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">No Steal Cooldown</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Utility</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">ESP / Wallhack</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Item Tracker</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Auto Farm</span><span class="toggle-badge">AFK</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Infinite Stamina</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOVEMENT TAB -->
+
+  <div class="tab-content" id="tab-movement">
+    <div class="section">
+      <div class="section-title">Speed</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Speed Hack</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Bunny Hop</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Sprint Always</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Air</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Fly</span><span class="toggle-badge">Obvious</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Noclip</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">High Jump</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Anti Gravity</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Teleport</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">TP to Target</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">TP to Cursor</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+
+  <div class="tab-content" id="tab-settings">
+    <div class="section">
+      <div class="section-title">Interface</div>
+      <div class="setting-row">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span class="setting-label">UI Scale</span>
+          <span class="setting-value" id="scaleVal">0.85</span>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" id="uiScale" min="0" max="100" value="85" oninput="updateScale(this.value)">
+        </div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Always on Top</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Hide on Death</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Compact Mode</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Notifications</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Toggle Alerts</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Sound Effects</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Anti-Cheat</div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Anti Ban</span><span class="toggle-badge">Beta</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleRow(this)">
+        <span><span class="toggle-label">Fake Lag</span></span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEYBINDS TAB -->
+
+  <div class="tab-content" id="tab-keybinds">
+    <div class="section">
+      <div class="section-title">UI Controls</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Toggle UI</span>
+        <span class="keybind-key" data-action="toggle-ui">INS</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Combat</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Auto Attack</span>
+        <span class="keybind-key" data-action="auto-attack">Z</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Kill Aura</span>
+        <span class="keybind-key" data-action="kill-aura">X</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Silent Aim</span>
+        <span class="keybind-key" data-action="silent-aim">C</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Movement</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Fly</span>
+        <span class="keybind-key" data-action="fly">V</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Noclip</span>
+        <span class="keybind-key" data-action="noclip">B</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Speed Hack</span>
+        <span class="keybind-key" data-action="speed">G</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">TP to Target</span>
+        <span class="keybind-key" data-action="tp">T</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Brainrot</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Auto Steal</span>
+        <span class="keybind-key" data-action="steal">F</span>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Auto Farm</span>
+        <span class="keybind-key" data-action="farm">H</span>
+      </div>
+    </div>
+    <div style="padding:8px 0 4px;text-align:center;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2e2e2e;letter-spacing:1px;">CLICK KEY TO REBIND</span>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+
+  <div id="statusBar">
+    <span><span class="status-dot"></span><span class="status-text">CONNECTED</span></span>
+    <span class="version-tag">v2.4.1</span>
+  </div>
+</div>
+
+<script>
+  // --- Toggle UI visibility ---
+  const hub = document.getElementById('srHub');
+  const toggleBtn = document.getElementById('toggleBtn');
+
+  toggleBtn.addEventListener('click', () => {
+    hub.classList.toggle('hidden');
+    toggleBtn.textContent = hub.classList.contains('hidden') ? '[ SHOW HUB ]' : '[ SR HUB ]';
+  });
+
+  // --- Tabs ---
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // --- Toggle rows ---
+  function toggleRow(el) {
+    el.classList.toggle('enabled');
+  }
+
+  // --- UI Scale ---
+  function updateScale(val) {
+    const scale = (val / 100).toFixed(2);
+    document.getElementById('scaleVal').textContent = scale;
+    hub.style.transform = hub.classList.contains('hidden')
+      ? `translateX(-50%) scale(0.95)`
+      : `scale(${scale})`;
+    hub.style.transformOrigin = 'top center';
+    hub.style.left = '50%';
+    hub.style.marginLeft = '-210px';
+  }
+
+  // Override hidden class transform to incorporate scale
+  const origToggle = hub.classList.toggle.bind(hub.classList);
+
+  // --- Dragging ---
+  let isDragging = false, startX, startY, startLeft, startTop;
+
+  const titleBar = document.getElementById('titleBar');
+
+  titleBar.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('ctrl-dot')) return;
+    isDragging = true;
+    const rect = hub.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+
+    // Remove centering transforms so we can use left/top freely
+    hub.style.transform = 'none';
+    hub.style.left = startLeft + 'px';
+    hub.style.top = startTop + 'px';
+    hub.style.marginLeft = '0';
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+  });
+
+  // Touch support
+  titleBar.addEventListener('touchstart', e => {
+    if (e.target.classList.contains('ctrl-dot')) return;
+    const touch = e.touches[0];
+    isDragging = true;
+    const rect = hub.getBoundingClientRect();
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    hub.style.transform = 'none';
+    hub.style.left = startLeft + 'px';
+    hub.style.top = startTop + 'px';
+    hub.style.marginLeft = '0';
+    document.addEventListener('touchmove', onTouchDrag);
+    document.addEventListener('touchend', stopDrag);
+  }, { passive: true });
+
+  function onDrag(e) {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    hub.style.left = (startLeft + dx) + 'px';
+    hub.style.top = (startTop + dy) + 'px';
+  }
+
+  function onTouchDrag(e) {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    hub.style.left = (startLeft + dx) + 'px';
+    hub.style.top = (startTop + dy) + 'px';
+  }
+
+  function stopDrag() {
+    isDragging = false;
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchmove', onTouchDrag);
+    document.removeEventListener('touchend', stopDrag);
+  }
+
+  // --- Keybind rebinding ---
+  let listeningKey = null;
+
+  document.querySelectorAll('.keybind-key').forEach(key => {
+    key.addEventListener('click', () => {
+      if (listeningKey) {
+        listeningKey.classList.remove('listening');
+        listeningKey.textContent = listeningKey.dataset.prev || listeningKey.textContent;
+      }
+      if (listeningKey === key) { listeningKey = null; return; }
+      listeningKey = key;
+      key.dataset.prev = key.textContent;
+      key.classList.add('listening');
+      key.textContent = '...';
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!listeningKey) return;
+    e.preventDefault();
+    const label = e.key === ' ' ? 'SPC'
+      : e.key === 'Insert' ? 'INS'
+      : e.key === 'Delete' ? 'DEL'
+      : e.key.length === 1 ? e.key.toUpperCase()
+      : e.key.toUpperCase().slice(0,4);
+    listeningKey.textContent = label;
+    listeningKey.classList.remove('listening');
+    listeningKey = null;
+  });
+</script>
+
+</body>
+</html>
