@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SR Hub</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&family=Bebas+Neue&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+background: #0d0d0d;
+min-height: 100vh;
+font-family: 'Rajdhani', sans-serif;
+overflow: hidden;
+}
+
+:root { --scale: 0.85; }
+
+/* ─── INTRO SCREEN ─── */
+#intro {
+position: fixed;
+inset: 0;
+background: #000;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 99999;
+animation: introFade 2.5s forwards;
+}
+@keyframes introFade {
+0%   { opacity: 0; }
+15%  { opacity: 1; }
+75%  { opacity: 1; }
+100% { opacity: 0; pointer-events: none; }
+}
+#intro.done { display: none; }
+
+.intro-title {
+font-family: 'Bebas Neue', sans-serif;
+font-size: 72px;
+color: #ffffff;
+letter-spacing: 14px;
+text-transform: uppercase;
+animation: introSlideUp 0.5s ease-out forwards;
+opacity: 0;
+transform: translateY(20px);
+animation-delay: 0.3s;
+}
+.intro-sub {
+font-family: 'Bebas Neue', sans-serif;
+font-size: 22px;
+color: #cc1111;
+letter-spacing: 8px;
+text-transform: uppercase;
+margin-top: 10px;
+animation: introSlideUp 0.5s ease-out forwards;
+opacity: 0;
+transform: translateY(14px);
+animation-delay: 0.6s;
+}
+@keyframes introSlideUp {
+to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── TOGGLE BUTTON ─── */
+#toggleBtn {
+position: fixed;
+top: 14px;
+left: 50%;
+transform: translateX(-50%);
+background: #131313;
+border: 1px solid #2a2a2a;
+color: #777;
+font-family: 'Share Tech Mono', monospace;
+font-size: 11px;
+padding: 5px 18px;
+cursor: pointer;
+border-radius: 3px;
+letter-spacing: 2px;
+z-index: 9999;
+transition: all 0.15s;
+text-transform: uppercase;
+}
+#toggleBtn:hover { background: #1e1e1e; color: #aaa; border-color: #3a3a3a; }
+
+/* ─── MAIN HUB ─── */
+#srHub {
+position: fixed;
+top: 58px;
+left: 50%;
+transform: translateX(-50%) scale(var(--scale));
+transform-origin: top center;
+width: 400px;
+background: #111;
+border: 1px solid #222;
+border-radius: 6px;
+box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+z-index: 1000;
+user-select: none;
+transition: opacity 0.18s;
+overflow: hidden;
+}
+#srHub.hidden { opacity: 0; pointer-events: none; }
+#srHub.dragged { transform: scale(var(--scale)); transform-origin: top left; }
+
+/* Background image inside hub */
+#hubBg {
+position: absolute;
+inset: 0;
+background-size: cover;
+background-position: center;
+opacity: 0.07;
+pointer-events: none;
+z-index: 0;
+}
+#srHub > *:not(#hubBg) { position: relative; z-index: 1; }
+
+/* ─── TITLE BAR ─── */
+#titleBar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 9px 13px;
+background: rgba(16,16,16,0.97);
+border-bottom: 1px solid #1e1e1e;
+cursor: grab;
+}
+#titleBar:active { cursor: grabbing; }
+.title-left { display: flex; align-items: center; gap: 8px; }
+.logo { width: 18px; height: 18px; background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-family: 'Share Tech Mono', monospace; font-size: 8px; color: #777; flex-shrink: 0; }
+.title-text { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #bbb; letter-spacing: 3px; }
+.title-sub  { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: #333; letter-spacing: 2px; margin-top: 1px; }
+.ctrl-dot { width: 10px; height: 10px; border-radius: 50%; cursor: pointer; background: #2e2e2e; transition: background 0.15s; }
+.ctrl-dot:hover { background: #555; }
+
+/* ─── TABS ─── */
+#tabBar { display: flex; background: rgba(14,14,14,0.95); border-bottom: 1px solid #1a1a1a; }
+.tab { flex:1; padding: 8px 4px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #333; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab:hover { color: #666; }
+.tab.active { color: #aaa; border-bottom-color: #444; background: rgba(255,255,255,0.02); }
+
+/* ─── TAB CONTENT ─── */
+.tab-content { display: none; padding: 12px; max-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #1e1e1e transparent; background: rgba(17,17,17,0.92); }
+.tab-content::-webkit-scrollbar { width: 3px; }
+.tab-content::-webkit-scrollbar-thumb { background: #222; }
+.tab-content.active { display: block; }
+
+.section { margin-bottom: 10px; }
+.section-title { font-family: 'Share Tech Mono', monospace; font-size: 8px; letter-spacing: 2px; color: #2a2a2a; text-transform: uppercase; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #181818; }
+
+/* ─── TOGGLE ROW ─── */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: rgba(22,22,22,0.95); border-radius: 3px; margin-bottom: 3px; border: 1px solid #1b1b1b; cursor: pointer; transition: background 0.12s; }
+.toggle-row:hover { background: rgba(26,26,26,0.98); }
+.toggle-label { font-size: 12px; font-weight: 600; color: #4a4a4a; transition: color 0.12s; }
+.toggle-row.enabled .toggle-label { color: #aaa; }
+.toggle-switch { width: 32px; height: 17px; background: #1c1c1c; border-radius: 9px; border: 1px solid #252525; position: relative; transition: background 0.18s; flex-shrink: 0; }
+.toggle-switch::after { content:''; position:absolute; width:11px; height:11px; background:#2a2a2a; border-radius:50%; top:2px; left:2px; transition: transform 0.18s, background 0.18s; }
+.toggle-row.enabled .toggle-switch { background: #262626; border-color: #363636; }
+.toggle-row.enabled .toggle-switch::after { transform: translateX(15px); background: #777; }
+
+/* ─── SETTINGS ─── */
+.setting-block { background: rgba(22,22,22,0.95); border: 1px solid #1b1b1b; border-radius: 3px; padding: 10px; margin-bottom: 3px; }
+.setting-header { display:flex; justify-content:space-between; margin-bottom:8px; }
+.setting-name { font-family:'Share Tech Mono',monospace; font-size:9px; color:#3e3e3e; letter-spacing:1.5px; text-transform:uppercase; }
+.setting-val  { font-family:'Share Tech Mono',monospace; font-size:9px; color:#555; }
+input[type=range] { -webkit-appearance:none; width:100%; height:3px; background:#1e1e1e; border-radius:2px; outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; background:#444; border-radius:50%; border:2px solid #2e2e2e; cursor:pointer; transition:background 0.15s; }
+input[type=range]::-webkit-slider-thumb:hover { background:#666; }
+
+/* ─── KEYBINDS ─── */
+.keybind-row { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:rgba(22,22,22,0.95); border:1px solid #1b1b1b; border-radius:3px; margin-bottom:3px; }
+.keybind-name { font-size:12px; font-weight:600; color:#4a4a4a; }
+.keybind-input-wrap { display:flex; gap:4px; align-items:center; }
+.mode-btn { font-family:'Share Tech Mono',monospace; font-size:8px; color:#2a2a2a; letter-spacing:1px; background:#141414; border:1px solid #1e1e1e; border-radius:2px; padding:2px 5px; cursor:pointer; transition:all 0.12s; text-transform:uppercase; }
+.mode-btn.active { color:#666; border-color:#333; background:#1a1a1a; }
+.keybind-key { font-family:'Share Tech Mono',monospace; font-size:10px; color:#444; background:#171717; border:1px solid #242424; border-radius:3px; padding:3px 8px; cursor:pointer; min-width:42px; text-align:center; transition:all 0.12s; }
+.keybind-key:hover { color:#777; border-color:#333; }
+.keybind-key.listening { color:#999; border-color:#444; animation: blink 0.7s infinite; }
+
+/* ─── STATUS BAR ─── */
+#statusBar { display:flex; justify-content:space-between; align-items:center; padding:6px 13px; border-top:1px solid #181818; background:rgba(12,12,12,0.97); }
+.sdot { width:5px; height:5px; background:#2e2e2e; border-radius:50%; display:inline-block; margin-right:6px; animation: blink 2.5s infinite; }
+.stext { font-family:'Share Tech Mono',monospace; font-size:8px; color:#2e2e2e; letter-spacing:1.5px; }
+.ver   { font-family:'Share Tech Mono',monospace; font-size:8px; color:#222; }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+/* ─── SIDE PANEL ─── */
+#sidePanel {
+position: fixed;
+right: 14px;
+top: 50%;
+transform: translateY(-50%) scale(var(--scale));
+display: flex;
+flex-direction: column;
+gap: 6px;
+z-index: 999;
+transition: opacity 0.18s;
+}
+
+.side-row { display:flex; gap: 6px; }
+
+.side-btn {
+width:  100px;
+height: 40px;
+background: #131313;
+border: 1px solid #212121;
+border-radius: 3px;
+color: #484848;
+font-family: 'Rajdhani', sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.6px;
+text-transform: uppercase;
+cursor: pointer;
+transition: all 0.12s;
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+line-height: 1.1;
+padding: 0 3px;
+}
+.side-btn:hover { background:#1a1a1a; color:#888; border-color:#333; }
+.side-btn.active { background:#1c1c1c; color:#c0c0c0; border-color:#484848; }
+
+.save-btn {
+  width: 100%;
+  padding: 8px;
+  background: #1e1e1e;
+  border: 1px solid #2e2e2e;
+  color: #aaa;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  margin-top: 10px;
+}
+.save-btn:hover {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #444;
+}
+
+</style>
+
+</head>
+<body>
+
+<!-- INTRO -->
+
+<div id="intro">
+  <div class="intro-title">SR Hub</div>
+  <div class="intro-sub">A New Beginning</div>
+</div>
+
+<button id="toggleBtn">[ SR HUB ]</button>
+
+<!-- MAIN HUB -->
+
+<div id="srHub">
+  <div id="hubBg"></div>
+
+  <div id="titleBar">
+    <div class="title-left">
+      <div class="logo">SR</div>
+      <div>
+        <div class="title-text">SR Hub</div>
+        <div class="title-sub">Steal a Brainrot</div>
+      </div>
+    </div>
+    <div class="title-controls" style="display:flex;gap:5px;">
+      <div class="ctrl-dot" onclick="closeHub()"></div>
+    </div>
+  </div>
+
+  <div id="tabBar">
+    <div class="tab active" data-tab="combat">Combat</div>
+    <div class="tab" data-tab="movement">Movement</div>
+    <div class="tab" data-tab="settings">Settings</div>
+    <div class="tab" data-tab="keybinds">Keybinds</div>
+  </div>
+
+  <!-- COMBAT -->
+
+  <div class="tab-content active" id="tab-combat">
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Auto Left</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Auto Right</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">TP Down</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Bat Lock</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Instant Steal</span><div class="toggle-switch"></div></div>
+    
+    <div class="setting-block" style="margin-top: 10px;">
+      <div class="setting-header">
+        <span class="setting-name">Steal Radius</span>
+        <span class="setting-val" id="stealRadiusVal">63</span>
+      </div>
+      <input type="range" id="stealRadius" min="0" max="100" value="63" oninput="updateStealRadius(this.value)">
+    </div>
+    
+    <div class="setting-block">
+      <div class="setting-header">
+        <span class="setting-name">Steal Duration</span>
+        <span class="setting-val" id="stealDurationVal">1.3</span>
+      </div>
+      <input type="range" id="stealDuration" min="0" max="10" step="0.1" value="1.3" oninput="updateStealDuration(this.value)">
+    </div>
+  </div>
+
+  <!-- MOVEMENT -->
+
+  <div class="tab-content" id="tab-movement">
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Carry Speed</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Lagger Speed</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Infinite Jump</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">No Walk Animation</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">FPS Boost</span><div class="toggle-switch"></div></div>
+    <div class="toggle-row" onclick="toggleRow(this)"><span class="toggle-label">Anti Ragdoll</span><div class="toggle-switch"></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+
+  <div class="tab-content" id="tab-settings">
+    <div class="setting-block">
+      <div class="setting-header">
+        <span class="setting-name">UI Scale</span>
+        <span class="setting-val" id="scaleVal">0.85</span>
+      </div>
+      <input type="range" id="uiScale" min="0" max="100" value="85" oninput="updateScale(this.value)">
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <!-- KEYBINDS -->
+
+  <div class="tab-content" id="tab-keybinds">
+    <div style="margin-bottom:10px;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#282828;letter-spacing:1.5px;">
+        CLICK KEY TO REBIND &nbsp;·&nbsp; KB = KEYBOARD &nbsp;·&nbsp; CT = CONTROLLER
+      </span>
+    </div>
+    <div class="section">
+      <div class="section-title">Combat</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Auto Left</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="Z" data-ct="LB">Z</span>
+        </div>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Auto Right</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="X" data-ct="RB">X</span>
+        </div>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">TP Down</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="C" data-ct="RS">C</span>
+        </div>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Bat Lock</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="V" data-ct="LS">V</span>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Movement</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Carry Speed</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="G" data-ct="LT">G</span>
+        </div>
+      </div>
+      <div class="keybind-row">
+        <span class="keybind-name">Lagger Speed</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="H" data-ct="RT">H</span>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">UI</div>
+      <div class="keybind-row">
+        <span class="keybind-name">Toggle UI</span>
+        <div class="keybind-input-wrap">
+          <span class="mode-btn active" data-mode="kb" onclick="switchMode(this)">KB</span>
+          <span class="mode-btn" data-mode="ct" onclick="switchMode(this)">CT</span>
+          <span class="keybind-key" data-kb="INS" data-ct="SEL">INS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="statusBar">
+    <span><span class="sdot"></span><span class="stext">CONNECTED</span></span>
+    <span class="ver">v2.4.1</span>
+  </div>
+</div>
+
+<!-- SIDE PANEL -->
+
+<div id="sidePanel">
+  <div class="side-row">
+    <button class="side-btn" onclick="toggleSide(this)">Auto Left</button>
+    <button class="side-btn" onclick="toggleSide(this)">Auto Right</button>
+  </div>
+  <div class="side-row">
+    <button class="side-btn" onclick="toggleSide(this)">TP Down</button>
+    <button class="side-btn" onclick="toggleSide(this)">Lagger Spd</button>
+  </div>
+  <div class="side-row">
+    <button class="side-btn" onclick="toggleSide(this)">Carry Spd</button>
+    <button class="side-btn" onclick="toggleSide(this)">Bat Lock</button>
+  </div>
+  <div class="side-row">
+    <button class="side-btn" onclick="toggleSide(this)">Drop</button>
+  </div>
+</div>
+
+<script>
+  // ─── VARIABLES ───
+  const hub = document.getElementById('srHub');
+  const side = document.getElementById('sidePanel');
+  const btn = document.getElementById('toggleBtn');
+  let currentScale = 0.85;
+  let isDragged = false;
+  let listeningKey = null;
+
+  // ─── INTRO ───
+  const intro = document.getElementById('intro');
+  setTimeout(() => { intro.classList.add('done'); }, 2600);
+
+  // ─── STEAL SETTINGS ───
+  function updateStealRadius(val) {
+    document.getElementById('stealRadiusVal').textContent = val;
+  }
+  function updateStealDuration(val) {
+    document.getElementById('stealDurationVal').textContent = val;
+  }
+
+  // ─── SAVE SETTINGS ───
+  function saveSettings() {
+    const enabledToggles = [];
+    document.querySelectorAll('.toggle-row.enabled').forEach(row => {
+      enabledToggles.push(row.querySelector('.toggle-label').textContent);
+    });
+    const activeSideButtons = [];
+    document.querySelectorAll('.side-btn.active').forEach(btn => {
+      activeSideButtons.push(btn.textContent);
+    });
+    
+    const settings = {
+      toggles: enabledToggles,
+      sideButtons: activeSideButtons,
+      scale: currentScale,
+      stealRadius: document.getElementById('stealRadius').value,
+      stealDuration: document.getElementById('stealDuration').value
+    };
+    
+    localStorage.setItem('srHubSettings', JSON.stringify(settings));
+    alert('Settings Saved!');
+  }
+
+  // ─── LOAD SETTINGS ───
+  function loadSettings() {
+    const saved = localStorage.getItem('srHubSettings');
+    if (saved) {
+      const settings = JSON.parse(saved);
+      document.querySelectorAll('.toggle-row').forEach(row => {
+        if (settings.toggles.includes(row.querySelector('.toggle-label').textContent)) {
+          row.classList.add('enabled');
+        }
+      });
+      document.querySelectorAll('.side-btn').forEach(btn => {
+        if (settings.sideButtons.includes(btn.textContent)) {
+          btn.classList.add('active');
+        }
+      });
+      if (settings.scale) {
+        currentScale = settings.scale;
+        document.getElementById('uiScale').value = currentScale * 100;
+        updateScale(currentScale * 100);
+      }
+      if (settings.stealRadius) {
+        document.getElementById('stealRadius').value = settings.stealRadius;
+        updateStealRadius(settings.stealRadius);
+      }
+      if (settings.stealDuration) {
+        document.getElementById('stealDuration').value = settings.stealDuration;
+        updateStealDuration(settings.stealDuration);
+      }
+    }
+  }
+  window.addEventListener('load', loadSettings);
+
+  // ─── UI SCALE ───
+  function updateScale(val) {
+    currentScale = val / 100;
+    document.getElementById('scaleVal').textContent = currentScale.toFixed(2);
+    document.documentElement.style.setProperty('--scale', currentScale);
+    if (isDragged) {
+      hub.style.transform = `scale(${currentScale})`;
+    } else {
+      hub.style.transform = `translateX(-50%) scale(${currentScale})`;
+    }
+  }
+
+  // ─── VISIBILITY ───
+  function closeHub() {
+    hub.classList.add('hidden');
+    btn.textContent = '[ SHOW HUB ]';
+  }
+  btn.addEventListener('click', () => {
+    const hidden = hub.classList.toggle('hidden');
+    btn.textContent = hidden ? '[ SHOW HUB ]' : '[ SR HUB ]';
+  });
+
+  // ─── TABS ───
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ─── TOGGLES ───
+  function toggleRow(el) { el.classList.toggle('enabled'); }
+  function toggleSide(el) { el.classList.toggle('active'); }
+
+  // ─── DRAG ───
+  let dragging = false, sx, sy, sl, st;
+  document.getElementById('titleBar').addEventListener('mousedown', e => {
+    if (e.target.classList.contains('ctrl-dot')) return;
+    dragging = true;
+    const r = hub.getBoundingClientRect();
+    sx = e.clientX; sy = e.clientY; sl = r.left; st = r.top;
+    isDragged = true;
+    hub.classList.add('dragged');
+    hub.style.left = sl + 'px'; hub.style.top = st + 'px';
+    hub.style.transform = `scale(${currentScale})`;
+    hub.style.transformOrigin = 'top left';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  function onMove(e) { if(!dragging)return; hub.style.left=(sl+e.clientX-sx)+'px'; hub.style.top=(st+e.clientY-sy)+'px'; }
+  function onUp() { dragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+
+  // ─── KEYBINDS ───
+  function switchMode(modeBtn) {
+    const wrap = modeBtn.closest('.keybind-input-wrap');
+    wrap.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    modeBtn.classList.add('active');
+    const keyEl = wrap.querySelector('.keybind-key');
+    keyEl.textContent = keyEl.dataset[modeBtn.dataset.mode] || '—';
+  }
+  document.querySelectorAll('.keybind-key').forEach(key => {
+    key.addEventListener('click', () => {
+      if (listeningKey && listeningKey !== key) {
+        listeningKey.classList.remove('listening');
+        const lw = listeningKey.closest('.keybind-input-wrap');
+        const lm = lw.querySelector('.mode-btn.active')?.dataset.mode || 'kb';
+        listeningKey.textContent = listeningKey.dataset[lm] || '—';
+        listeningKey = null;
+      }
+      if (listeningKey === key) {
+        key.classList.remove('listening');
+        const w = key.closest('.keybind-input-wrap');
+        const m = w.querySelector('.mode-btn.active')?.dataset.mode || 'kb';
+        key.textContent = key.dataset[m] || '—';
+        listeningKey = null; return;
+      }
+      listeningKey = key; key.classList.add('listening'); key.textContent = '...';
+    });
+  });
+  const KEY_NAMES = {' ':'SPC','Insert':'INS','Delete':'DEL','Escape':'ESC','Tab':'TAB','Control':'CTRL','Shift':'SHFT','Alt':'ALT','ArrowUp':'UP','ArrowDown':'DOWN','ArrowLeft':'LEFT','ArrowRight':'RIGHT','Enter':'ENTR','Backspace':'BKSP','CapsLock':'CAPS','F1':'F1','F2':'F2','F3':'F3','F4':'F4','F5':'F5','F6':'F6','F7':'F7','F8':'F8','F9':'F9','F10':'F10','F11':'F11','F12':'F12'};
+  document.addEventListener('keydown', e => {
+    if(!listeningKey)return; e.preventDefault();
+    const label = KEY_NAMES[e.key]||(e.key.length===1?e.key.toUpperCase():e.key.toUpperCase().slice(0,5));
+    const wrap = listeningKey.closest('.keybind-input-wrap');
+    const mode = wrap.querySelector('.mode-btn.active')?.dataset.mode||'kb';
+    listeningKey.dataset[mode]=label; listeningKey.textContent=label;
+    listeningKey.classList.remove('listening'); listeningKey=null;
+  });
+  const PAD_LABELS={0:'A',1:'B',2:'X',3:'Y',4:'LB',5:'RB',6:'LT',7:'RT',8:'SEL',9:'START',10:'LS',11:'RS',12:'D-UP',13:'D-DN',14:'D-LT',15:'D-RT'};
+  const prevPad={};
+  function pollGamepad() {
+    const pads=navigator.getGamepads?navigator.getGamepads():[];
+    for(const pad of pads){
+      if(!pad)continue;
+      pad.buttons.forEach((b,i)=>{
+        const k=pad.index+'_'+i;
+        if(b.pressed&&!prevPad[k]&&listeningKey){
+          const label=PAD_LABELS[i]||('B'+i);
+          const wrap=listeningKey.closest('.keybind-input-wrap');
+          const mode=wrap.querySelector('.mode-btn.active')?.dataset.mode||'kb';
+          listeningKey.dataset[mode]=label; listeningKey.textContent=label;
+          listeningKey.classList.remove('listening'); listeningKey=null;
+        }
+        prevPad[k]=b.pressed;
+      });
+    }
+    requestAnimationFrame(pollGamepad);
+  }
+  pollGamepad();
+</script>
+
+</body>
+</html>
